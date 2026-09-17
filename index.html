@@ -98,6 +98,7 @@
     <h1>1:1 상담 예약</h1>
     <p class="sub">상담 가능 일정 : 10월 12일(월) ~ 10월 30일(금), 공휴일 제외</p>
     <p class="sub" style="margin-top:4px;">* 본 상담은 약 40분 소요됩니다.</p>
+    <p class="sub" style="margin-top:4px;color:#B23B3B;font-weight:700;">※ 오산청년일자리지원센터 이루잡은 만 19세에서 39세까지 신청 가능합니다.</p>
   </header>
 
   <div class="mode-tabs">
@@ -226,7 +227,7 @@ const LOCATIONS = [
   {id:'cityhall', name:'오산시청', place:'1층 로비 (성호대로 141)', capacity:2},
   {id:'jobcenter', name:'오산고용복지+센터', place:'4층 상담실 (경기동로 51)', capacity:2},
   {id:'library', name:'오산중앙도서관', place:'1층 로비 (운암로 85)', capacity:2},
-  {id:'youth', name:'오산청년일자리지원센터 이루잡', place:'3층 상담실 (운천로 62)', capacity:2},
+  {id:'youth', name:'오산청년일자리지원센터 이루잡', place:'3층 상담실 (운천로 62)<br><span style="color:#B23B3B;font-weight:700;">※ 만 19세에서 39세까지 신청 가능</span>', capacity:2},
 ];
 const SLOTS = ['09:00-10:00','10:00-11:00','11:00-12:00','13:00-14:00','14:00-15:00','15:00-16:00'];
 
@@ -366,7 +367,7 @@ function buildSeatGrid(area, capacity, taken, onPick){
     for(let seat=1; seat<=capacity; seat++){
       const btn = document.createElement('button');
       btn.className = 'seat-btn';
-      btn.textContent = capacity===1 ? '예약' : (seat+'번');
+      btn.textContent = capacity===1 ? '예약' : ('예약'+seat);
       const key = s+'|'+seat;
       if(taken.has(key)){
         btn.classList.add('taken'); btn.disabled = true;
