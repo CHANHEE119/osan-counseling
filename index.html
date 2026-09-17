@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오산시 사회공헌 1:1 상담 예약</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#1B2A4A; --navy-light:#2A3E63; --paper:#F5F2EA; --card:#FFFFFF;
+    --gold:#B8862E; --sage:#3F6B57; --ink:#23262B; --muted:#8A8577; --line:#DCD6C7;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;}
+  .wrap{max-width:480px;margin:0 auto;min-height:100vh;background:var(--paper);padding-bottom:0;display:flex;flex-direction:column;}
+  header{padding:28px 20px 20px;border-bottom:1px solid var(--line);}
+  .eyebrow{font-size:13px;color:var(--navy-light);font-weight:600;margin:0 0 6px;}
+  h1{font-size:24px;font-weight:800;color:var(--navy);margin:0;letter-spacing:-0.3px;}
+  .sub{font-size:14px;color:var(--muted);margin:8px 0 0;}
+  .mode-tabs{display:flex;gap:8px;padding:16px 20px 0;}
+  .mode-tab{flex:1;padding:10px;border:1px solid var(--line);background:var(--card);border-radius:6px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;}
+  .mode-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .stepper{display:flex;align-items:center;padding:18px 20px 0;gap:6px;}
+  .step-dot{display:flex;align-items:center;gap:8px;flex:1;}
+  .step-dot .num{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--card);flex-shrink:0;}
+  .step-dot.active .num{border-color:var(--navy);color:var(--navy);}
+  .step-dot.done .num{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .step-dot .label{font-size:12.5px;color:var(--muted);}
+  .step-dot.active .label{color:var(--navy);font-weight:700;}
+  .step-line{flex:0 0 16px;height:1px;background:var(--line);}
+  main{padding:24px 20px 0;flex:1;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .loc-card{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:6px;padding:16px;margin-bottom:10px;cursor:pointer;font-family:inherit;}
+  .loc-card.selected{border-left-color:var(--navy);background:#FBFAF6;}
+  .loc-name{font-size:16px;font-weight:700;}
+  .loc-place{font-size:13px;color:var(--muted);margin-top:3px;}
+  .week-block{margin-bottom:18px;}
+  .week-title{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:8px;}
+  .date-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+  .date-chip{flex:0 0 auto;min-width:52px;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;font-family:inherit;}
+  .date-chip .dow{font-size:11px;color:var(--muted);}
+  .date-chip .day{font-size:17px;font-weight:700;margin-top:2px;}
+  .date-chip.selected{background:var(--navy);border-color:var(--navy);}
+  .date-chip.selected .dow,.date-chip.selected .day{color:#fff;}
+  .slot-group-title{font-size:13px;color:var(--muted);font-weight:600;margin:16px 0 8px;}
+  .slot-time-block{margin-bottom:14px;}
+  .slot-time-label{font-size:14px;font-weight:700;margin-bottom:6px;}
+  .seat-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .seat-btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;min-width:52px;}
+  .seat-btn.selected{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .seat-btn.taken{background:#EDEAE1;color:var(--muted);text-decoration:line-through;cursor:not-allowed;}
+  .summary-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin:18px 0;}
+  .summary-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;}
+  .summary-row .k{color:var(--muted);}
+  .summary-row .v{font-weight:700;}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;}
+  input[type=text],input[type=tel],input[type=email],input[type=password],select{width:100%;padding:12px;border:1px solid var(--line);border-radius:6px;font-size:15px;background:var(--card);font-family:inherit;color:var(--ink);}
+  .btn-primary{display:block;width:100%;background:var(--navy);color:#fff;border:none;border-radius:6px;padding:15px;font-size:16px;font-weight:700;margin-top:22px;cursor:pointer;font-family:inherit;}
+  .btn-primary:disabled{background:var(--muted);cursor:not-allowed;}
+  .btn-secondary{display:block;width:100%;background:transparent;color:var(--navy);border:1px solid var(--navy);border-radius:6px;padding:13px;font-size:15px;font-weight:700;margin-top:10px;cursor:pointer;font-family:inherit;}
+  .btn-danger{display:block;width:100%;background:#fff;color:#B23B3B;border:1px solid #B23B3B;border-radius:6px;padding:12px;font-size:14px;font-weight:700;margin-top:8px;cursor:pointer;font-family:inherit;}
+  .link-btn{background:none;border:none;color:var(--navy-light);font-size:13px;text-decoration:underline;cursor:pointer;padding:6px 0;font-family:inherit;}
+  .error-msg{color:#B23B3B;font-size:13.5px;margin-top:10px;display:none;}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:6px;}
+  .confirm-box{text-align:center;padding:36px 0 12px;}
+  .confirm-mark{font-size:44px;color:var(--sage);margin-bottom:14px;}
+  .confirm-title{font-size:19px;font-weight:800;color:var(--navy);}
+  .confirm-sub{font-size:14px;color:var(--muted);margin-top:6px;}
+  .capture-note{background:#FBF6E9;border:1px solid #E9DDB6;border-radius:6px;padding:12px 14px;font-size:13.5px;color:#6B5A20;margin-top:14px;}
+  .emphasis-note{background:#FDF1E7;border:2px solid var(--gold);border-radius:8px;padding:16px;font-size:14.5px;font-weight:700;color:#7A4A12;text-align:center;line-height:1.6;margin-top:18px;}
+  .my-res-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:10px;}
+  .my-res-card.canceled{opacity:0.55;}
+  .my-res-top{display:flex;justify-content:space-between;align-items:center;}
+  .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;}
+  .badge.confirmed{background:#E7EFEA;color:var(--sage);}
+  .badge.canceled{background:#F0EDE6;color:var(--muted);}
+  .res-actions{display:flex;gap:8px;margin-top:10px;}
+  .res-actions button{flex:1;font-size:13px;padding:9px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:14px;}
+  th,td{border:1px solid var(--line);padding:6px 5px;text-align:left;}
+  th{background:var(--card);color:var(--muted);font-weight:700;}
+  .admin-empty{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
+  .loading{text-align:center;color:var(--muted);font-size:14px;padding:30px 0;}
+  footer{margin-top:auto;padding:16px 20px 28px;text-align:center;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);}
+  .admin-section{margin-top:20px;}
+  .consent-box{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-top:20px;}
+  .consent-title{font-size:14px;font-weight:700;margin:0 0 8px;}
+  .consent-text{font-size:12.5px;color:var(--muted);line-height:1.7;margin:0 0 12px;}
+  .consent-option{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;cursor:pointer;}
+  .consent-option input{width:auto;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">오산시 성인 진로개발 사회공헌 상담서비스</p>
+    <h1>1:1 상담 예약</h1>
+    <p class="sub">상담 가능 일정 : 10월 12일(월) ~ 10월 30일(금), 공휴일 제외</p>
+    <p class="sub" style="margin-top:4px;">* 본 상담은 약 40분 소요됩니다.</p>
+  </header>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-book">새 예약</button>
+    <button class="mode-tab" id="tab-manage">예약 확인·취소·변경</button>
+  </div>
+
+  <!-- ===================== 예약 흐름 ===================== -->
+  <div id="book-flow">
+    <div class="stepper" id="stepper">
+      <div class="step-dot active" data-step="1"><div class="num">1</div><div class="label">장소</div></div>
+      <div class="step-line"></div>
+      <div class="step-dot" data-step="2"><div class="num">2</div><div class="label">일정</div></div>
+      <div class="step-line"></div>
+      <div class="step-dot" data-step="3"><div class="num">3</div><div class="label">확인</div></div>
+    </div>
+    <main>
+      <section class="panel active" id="panel-1">
+        <div id="loc-list"></div>
+        <button class="btn-primary" id="to-step2" disabled>다음: 날짜·시간 선택</button>
+      </section>
+      <section class="panel" id="panel-2">
+        <div id="date-picker"></div>
+        <div id="slot-area"></div>
+        <p class="error-msg" id="slot-error">이미 예약된 시간입니다. 다른 시간을 선택해주세요.</p>
+        <button class="btn-primary" id="to-step3" disabled>다음: 예약자 정보 입력</button>
+        <button class="btn-secondary" id="back-1">이전으로</button>
+      </section>
+      <section class="panel" id="panel-3">
+        <div class="summary-card" id="summary"></div>
+        <label for="f-name">이름</label>
+        <input type="text" id="f-name" placeholder="홍길동">
+        <label for="f-phone">연락처 (필수)</label>
+        <input type="tel" id="f-phone" placeholder="010-0000-0000">
+        <label for="f-topic">상담 분야</label>
+        <select id="f-topic">
+          <option>진로상담</option>
+          <option>생애설계상담</option>
+          <option>기타</option>
+        </select>
+        <p class="error-msg" id="form-error">이름과 연락처를 모두 입력해주세요.</p>
+
+        <div class="consent-box">
+          <p class="consent-title">개인정보 수집·이용 동의</p>
+          <p class="consent-text">
+            성인진로개발 사회공헌 1:1 상담서비스 관련해서 아래와 같이 개인정보를 수집합니다.<br>
+            - 수집목적 : 성인진로개발 사회공헌 1:1 상담서비스 예약 확인<br>
+            - 수집항목 : 성함, 휴대폰번호<br>
+            - 보유·이용기간 : 사회공헌 상담서비스 종료 시까지<br>
+            - 개인정보 수집·이용 미동의 시 참여가 제한됩니다.
+          </p>
+          <label class="consent-option"><input type="checkbox" id="consent-agree"> 동의합니다.</label>
+          <label class="consent-option"><input type="checkbox" id="consent-disagree"> 동의하지 않습니다.</label>
+        </div>
+        <p class="error-msg" id="consent-error">개인정보 수집·이용에 동의하셔야 예약이 가능합니다.</p>
+
+        <button class="btn-primary" id="submit-booking">예약 확정하기</button>
+        <button class="btn-secondary" id="back-2">이전으로</button>
+      </section>
+      <section class="panel" id="panel-4">
+        <div class="confirm-box">
+          <div class="confirm-mark">✓</div>
+          <div class="confirm-title">예약이 완료되었습니다</div>
+          <div class="confirm-sub">아래 내용을 확인해주세요.</div>
+        </div>
+        <div class="emphasis-note">⚠️ 예약확정 문자가 별도로 발송되지 않으니 꼭 화면을 캡처해주시고 일정에 등록해두세요. 감사합니다.</div>
+        <div class="summary-card" id="summary-done"></div>
+        <div class="capture-note">📱 이 화면을 캡처해서 보관해주세요. 예약 확인 및 취소·변경 시 필요합니다.</div>
+        <button class="btn-secondary" id="restart">새로 예약하기</button>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===================== 확인/취소/변경 흐름 ===================== -->
+  <div id="manage-flow" style="display:none;">
+    <main>
+      <section class="panel active" id="manage-lookup">
+        <label for="m-phone">예약할 때 입력한 연락처</label>
+        <input type="tel" id="m-phone" placeholder="010-0000-0000">
+        <button class="btn-primary" id="m-search">예약 조회하기</button>
+        <p class="error-msg" id="m-error">해당 번호로 등록된 예약이 없습니다.</p>
+        <div id="m-list" style="margin-top:18px;"></div>
+      </section>
+
+      <section class="panel" id="manage-reschedule">
+        <p class="sub" style="margin:0 0 14px;">변경할 새 날짜·시간을 선택해주세요.</p>
+        <div id="r-date-picker"></div>
+        <div id="r-slot-area"></div>
+        <p class="error-msg" id="r-error">이미 예약된 시간입니다. 다른 시간을 선택해주세요.</p>
+        <button class="btn-primary" id="r-confirm" disabled>이 시간으로 변경하기</button>
+        <button class="btn-secondary" id="r-back">취소하고 목록으로</button>
+      </section>
+    </main>
+  </div>
+
+  <div class="admin-section">
+    <div style="text-align:center;">
+      <button class="link-btn" id="admin-toggle">운영자 예약 현황 보기</button>
+    </div>
+    <div id="admin-area" style="display:none;padding:0 20px;">
+      <div id="admin-login-box">
+        <label for="a-email">관리자 이메일</label>
+        <input type="email" id="a-email" placeholder="admin@example.com">
+        <label for="a-pw">비밀번호</label>
+        <input type="password" id="a-pw">
+        <button class="btn-secondary" id="admin-login">로그인</button>
+        <p class="error-msg" id="admin-error">로그인에 실패했습니다.</p>
+      </div>
+      <div id="admin-table-wrap"></div>
+    </div>
+  </div>
+
+  <footer>
+    문의 : 오산시 평생학습관 031-8036-7832
+  </footer>
+</div>
+
+<script>
+// ⚠️ Supabase 프로젝트 생성 후, 아래 두 값을 대표님의 실제 값으로 바꿔주세요.
+const SUPABASE_URL = 'https://daimsmnipwzsuwrwsfpn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9xRybmH_l_AL9xfI-NwxNg_o8F3cx9L';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const LOCATIONS = [
+  {id:'lifelong', name:'오산시 평생학습관', place:'청학로 55-6', capacity:4},
+  {id:'cityhall', name:'오산시청', place:'1층 로비 (성호대로 141)', capacity:2},
+  {id:'jobcenter', name:'오산고용복지+센터', place:'4층 상담실 (경기동로 51)', capacity:2},
+  {id:'library', name:'오산중앙도서관', place:'1층 로비 (운암로 85)', capacity:2},
+  {id:'youth', name:'오산청년일자리지원센터 이루잡', place:'3층 상담실 (운천로 62)', capacity:2},
+];
+const SLOTS = ['09:00-10:00','10:00-11:00','11:00-12:00','13:00-14:00','14:00-15:00','15:00-16:00'];
+
+function buildDates(){
+  const start = new Date(2026,9,12), end = new Date(2026,9,30);
+  const dates = []; let cur = new Date(start);
+  while(cur <= end){
+    const dow = cur.getDay();
+    if(dow !== 0 && dow !== 6) dates.push(new Date(cur));
+    cur.setDate(cur.getDate()+1);
+  }
+  return dates;
+}
+const ALL_DATES = buildDates();
+const DOW_KR = ['일','월','화','수','목','금','토'];
+function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtDateKR(d){ return `${d.getMonth()+1}월 ${d.getDate()}일(${DOW_KR[d.getDay()]})`; }
+function parseDate(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
+
+let state = { location:null, date:null, slot:null, seat:null };
+
+// ---------- 탭 전환 ----------
+document.getElementById('tab-book').addEventListener('click', ()=>{
+  if(document.getElementById('panel-4').classList.contains('active')) resetBookingFlow();
+  switchTab('book');
+});
+document.getElementById('tab-manage').addEventListener('click', ()=>switchTab('manage'));
+function switchTab(tab){
+  document.getElementById('tab-book').classList.toggle('active', tab==='book');
+  document.getElementById('tab-manage').classList.toggle('active', tab==='manage');
+  document.getElementById('book-flow').style.display = tab==='book' ? 'block' : 'none';
+  document.getElementById('manage-flow').style.display = tab==='manage' ? 'block' : 'none';
+}
+
+// ---------- STEP 1: 장소 ----------
+const locList = document.getElementById('loc-list');
+LOCATIONS.forEach(loc=>{
+  const btn = document.createElement('button');
+  btn.className = 'loc-card';
+  btn.innerHTML = `<div class="loc-name">${loc.name}</div><div class="loc-place">${loc.place}</div>`;
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#loc-list .loc-card').forEach(c=>c.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.location = loc;
+    document.getElementById('to-step2').disabled = false;
+  });
+  locList.appendChild(btn);
+});
+document.getElementById('to-step2').addEventListener('click', ()=>goStep(2));
+document.getElementById('back-1').addEventListener('click', ()=>goStep(1));
+document.getElementById('back-2').addEventListener('click', ()=>goStep(2));
+
+function goStep(n){
+  document.querySelectorAll('#book-flow .panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  document.querySelectorAll('#stepper .step-dot').forEach(d=>{
+    const s = Number(d.dataset.step);
+    d.classList.remove('active','done');
+    if(s < n) d.classList.add('done');
+    if(s === n) d.classList.add('active');
+  });
+  if(n===2) renderDatePicker();
+  if(n===3) renderSummary();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderDateChips(container, onPick){
+  container.innerHTML = '';
+  const weeks = [];
+  for(let i=0;i<ALL_DATES.length;i+=5) weeks.push(ALL_DATES.slice(i,i+5));
+  weeks.forEach((week,wi)=>{
+    const block = document.createElement('div');
+    block.className = 'week-block';
+    const title = document.createElement('div');
+    title.className = 'week-title';
+    title.textContent = `${wi+1}주차 (${week[0].getMonth()+1}/${week[0].getDate()} ~ ${week[week.length-1].getMonth()+1}/${week[week.length-1].getDate()})`;
+    block.appendChild(title);
+    const row = document.createElement('div');
+    row.className = 'date-row';
+    week.forEach(d=>{
+      const chip = document.createElement('button');
+      chip.className = 'date-chip';
+      chip.innerHTML = `<div class="dow">${DOW_KR[d.getDay()]}</div><div class="day">${d.getDate()}</div>`;
+      chip.addEventListener('click', ()=>{
+        container.querySelectorAll('.date-chip').forEach(c=>c.classList.remove('selected'));
+        chip.classList.add('selected');
+        onPick(d);
+      });
+      row.appendChild(chip);
+    });
+    block.appendChild(row);
+    container.appendChild(block);
+  });
+}
+
+function renderDatePicker(){
+  renderDateChips(document.getElementById('date-picker'), (d)=>{
+    state.date = d; state.slot = null; state.seat = null;
+    document.getElementById('to-step3').disabled = true;
+    renderSlots();
+  });
+}
+
+async function fetchTakenSeats(locationId, dateStr){
+  const { data, error } = await sb.rpc('get_availability', { p_location_id: locationId, p_date: dateStr });
+  if(error){ console.error(error); return new Set(); }
+  return new Set((data||[]).map(r=> r.slot+'|'+r.seat));
+}
+
+async function renderSlots(){
+  const area = document.getElementById('slot-area');
+  area.innerHTML = '<div class="loading">예약 가능 시간을 확인하는 중...</div>';
+  document.getElementById('slot-error').style.display = 'none';
+  const dateStr = fmtDate(state.date);
+  const taken = await fetchTakenSeats(state.location.id, dateStr);
+  buildSeatGrid(area, state.location.capacity, taken, (slot, seat)=>{
+    state.slot = slot; state.seat = seat;
+    document.getElementById('to-step3').disabled = false;
+  });
+}
+
+function buildSeatGrid(area, capacity, taken, onPick){
+  area.innerHTML = '';
+  const morning = document.createElement('div');
+  morning.innerHTML = '<div class="slot-group-title">오전 (9시 ~ 12시)</div>';
+  const afternoon = document.createElement('div');
+  afternoon.innerHTML = '<div class="slot-group-title">오후 (13시 ~ 16시)</div>';
+  SLOTS.forEach((s, idx)=>{
+    const block = document.createElement('div');
+    block.className = 'slot-time-block';
+    const label = document.createElement('div');
+    label.className = 'slot-time-label';
+    label.textContent = s;
+    block.appendChild(label);
+    const seatRow = document.createElement('div');
+    seatRow.className = 'seat-row';
+    for(let seat=1; seat<=capacity; seat++){
+      const btn = document.createElement('button');
+      btn.className = 'seat-btn';
+      btn.textContent = capacity===1 ? '예약' : (seat+'번');
+      const key = s+'|'+seat;
+      if(taken.has(key)){
+        btn.classList.add('taken'); btn.disabled = true;
+      } else {
+        btn.addEventListener('click', ()=>{
+          area.querySelectorAll('.seat-btn').forEach(b=>b.classList.remove('selected'));
+          btn.classList.add('selected');
+          onPick(s, seat);
+        });
+      }
+      seatRow.appendChild(btn);
+    }
+    block.appendChild(seatRow);
+    (idx < 3 ? morning : afternoon).appendChild(block);
+  });
+  area.appendChild(morning); area.appendChild(afternoon);
+}
+
+document.getElementById('to-step3').addEventListener('click', ()=>goStep(3));
+
+function renderSummary(){
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-row"><span class="k">장소</span><span class="v">${state.location.name} (${state.location.place})</span></div>
+    <div class="summary-row"><span class="k">날짜</span><span class="v">${fmtDateKR(state.date)}</span></div>
+    <div class="summary-row"><span class="k">시간</span><span class="v">${state.slot}</span></div>`;
+}
+
+document.getElementById('consent-agree').addEventListener('change', function(){
+  if(this.checked) document.getElementById('consent-disagree').checked = false;
+});
+document.getElementById('consent-disagree').addEventListener('change', function(){
+  if(this.checked) document.getElementById('consent-agree').checked = false;
+});
+
+document.getElementById('submit-booking').addEventListener('click', async ()=>{
+  const name = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const topic = document.getElementById('f-topic').value;
+  const errEl = document.getElementById('form-error');
+  const consentErrEl = document.getElementById('consent-error');
+  if(!name || !phone){ errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+
+  const agreed = document.getElementById('consent-agree').checked;
+  if(!agreed){ consentErrEl.style.display = 'block'; return; }
+  consentErrEl.style.display = 'none';
+
+  const dateStr = fmtDate(state.date);
+  const { error } = await sb.rpc('create_booking', {
+    p_location_id: state.location.id, p_location_name: state.location.name, p_place: state.location.place,
+    p_date: dateStr, p_slot: state.slot, p_seat: state.seat, p_name: name, p_phone: phone, p_topic: topic
+  });
+
+  if(error){
+    if((error.message||'').includes('SLOT_TAKEN')){
+      goStep(2); renderSlots();
+      document.getElementById('slot-error').style.display = 'block';
+    } else {
+      alert('예약 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error(error);
+    }
+    return;
+  }
+
+  document.getElementById('summary-done').innerHTML = `
+    <div class="summary-row"><span class="k">이름</span><span class="v">${name}</span></div>
+    <div class="summary-row"><span class="k">장소</span><span class="v">${state.location.name} (${state.location.place})</span></div>
+    <div class="summary-row"><span class="k">날짜</span><span class="v">${fmtDateKR(state.date)}</span></div>
+    <div class="summary-row"><span class="k">시간</span><span class="v">${state.slot}</span></div>
+    <div class="summary-row"><span class="k">상담 분야</span><span class="v">${topic}</span></div>`;
+  document.querySelectorAll('#book-flow .panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-4').classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+function resetBookingFlow(){
+  state = { location:null, date:null, slot:null, seat:null };
+  document.querySelectorAll('#loc-list .loc-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('to-step2').disabled = true;
+  document.getElementById('to-step3').disabled = true;
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-phone').value = '';
+  document.getElementById('consent-agree').checked = false;
+  document.getElementById('consent-disagree').checked = false;
+  goStep(1);
+}
+document.getElementById('restart').addEventListener('click', resetBookingFlow);
+
+// ---------- 예약 확인 · 취소 · 변경 ----------
+let myPhone = '';
+let rescheduleTarget = null; // {id, ...}
+
+document.getElementById('m-search').addEventListener('click', async ()=>{
+  const phone = document.getElementById('m-phone').value.trim();
+  const errEl = document.getElementById('m-error');
+  const listEl = document.getElementById('m-list');
+  errEl.style.display = 'none';
+  listEl.innerHTML = '<div class="loading">조회 중...</div>';
+  if(!phone){ listEl.innerHTML=''; errEl.textContent='연락처를 입력해주세요.'; errEl.style.display='block'; return; }
+  myPhone = phone;
+
+  const { data, error } = await sb.rpc('lookup_by_phone', { p_phone: phone });
+  if(error){ listEl.innerHTML=''; errEl.textContent='조회 중 오류가 발생했습니다.'; errEl.style.display='block'; return; }
+  if(!data || data.length === 0){
+    listEl.innerHTML='';
+    errEl.textContent='해당 번호로 등록된 예약이 없습니다.';
+    errEl.style.display='block';
+    return;
+  }
+  renderMyReservations(data);
+});
+
+function renderMyReservations(list){
+  const listEl = document.getElementById('m-list');
+  listEl.innerHTML = '';
+  list.forEach(r=>{
+    const d = parseDate(r.date);
+    const deadlinePassed = d <= new Date(new Date().setHours(0,0,0,0) + 24*3600*1000);
+    const card = document.createElement('div');
+    card.className = 'my-res-card' + (r.status==='canceled' ? ' canceled' : '');
+    card.innerHTML = `
+      <div class="my-res-top">
+        <strong>${r.location_name} (${r.place})</strong>
+        <span class="badge ${r.status==='canceled'?'canceled':'confirmed'}">${r.status==='canceled'?'취소됨':'확정'}</span>
+      </div>
+      <div class="hint" style="margin-top:6px;">${fmtDateKR(d)} · ${r.slot} · ${r.topic}</div>
+    `;
+    if(r.status === 'confirmed'){
+      const actions = document.createElement('div');
+      actions.className = 'res-actions';
+      if(deadlinePassed){
+        const note = document.createElement('div');
+        note.className = 'hint';
+        note.style.marginTop = '8px';
+        note.textContent = '상담 하루 전이 지나 온라인 취소·변경이 불가합니다. 담당자에게 연락해주세요. (031-8036-7832)';
+        card.appendChild(note);
+      } else {
+        const changeBtn = document.createElement('button');
+        changeBtn.className = 'btn-secondary';
+        changeBtn.textContent = '변경';
+        changeBtn.addEventListener('click', ()=>startReschedule(r));
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn-danger';
+        cancelBtn.textContent = '취소';
+        cancelBtn.addEventListener('click', ()=>doCancel(r));
+        actions.appendChild(changeBtn);
+        actions.appendChild(cancelBtn);
+        card.appendChild(actions);
+      }
+    }
+    listEl.appendChild(card);
+  });
+}
+
+async function doCancel(r){
+  if(!confirm(`${r.location_name} / ${r.date} / ${r.slot} 예약을 취소할까요?`)) return;
+  const { error } = await sb.rpc('cancel_booking', { p_id: r.id, p_phone: myPhone });
+  if(error){
+    if((error.message||'').includes('TOO_LATE')){
+      alert('상담 하루 전이 지나 취소가 불가합니다. 담당자에게 연락해주세요. (031-8036-7832)');
+    } else {
+      alert('취소 처리 중 오류가 발생했습니다.');
+    }
+    return;
+  }
+  document.getElementById('m-search').click();
+}
+
+function startReschedule(r){
+  rescheduleTarget = r;
+  const loc = LOCATIONS.find(l=>l.name===r.location_name);
+  document.getElementById('manage-lookup').classList.remove('active');
+  document.getElementById('manage-reschedule').classList.add('active');
+  renderDateChips(document.getElementById('r-date-picker'), async (d)=>{
+    rescheduleTarget._newDate = d;
+    document.getElementById('r-confirm').disabled = true;
+    const area = document.getElementById('r-slot-area');
+    area.innerHTML = '<div class="loading">예약 가능 시간을 확인하는 중...</div>';
+    const taken = await fetchTakenSeats(loc.id, fmtDate(d));
+    buildSeatGrid(area, loc.capacity, taken, (slot, seat)=>{
+      rescheduleTarget._newSlot = slot;
+      rescheduleTarget._newSeat = seat;
+      document.getElementById('r-confirm').disabled = false;
+    });
+  });
+  document.getElementById('r-slot-area').innerHTML = '';
+}
+
+document.getElementById('r-back').addEventListener('click', ()=>{
+  document.getElementById('manage-reschedule').classList.remove('active');
+  document.getElementById('manage-lookup').classList.add('active');
+});
+
+document.getElementById('r-confirm').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('r-error');
+  errEl.style.display = 'none';
+  const { error } = await sb.rpc('change_booking', {
+    p_id: rescheduleTarget.id, p_phone: myPhone,
+    p_new_date: fmtDate(rescheduleTarget._newDate), p_new_slot: rescheduleTarget._newSlot, p_new_seat: rescheduleTarget._newSeat
+  });
+  if(error){
+    if((error.message||'').includes('SLOT_TAKEN')){ errEl.style.display = 'block'; }
+    else if((error.message||'').includes('TOO_LATE')){ alert('상담 하루 전이 지나 변경이 불가합니다. 담당자에게 연락해주세요. (031-8036-7832)'); }
+    else { alert('변경 처리 중 오류가 발생했습니다.'); }
+    return;
+  }
+  document.getElementById('manage-reschedule').classList.remove('active');
+  document.getElementById('manage-lookup').classList.add('active');
+  document.getElementById('m-search').click();
+});
+
+// ---------- 관리자 ----------
+document.getElementById('admin-toggle').addEventListener('click', ()=>{
+  const area = document.getElementById('admin-area');
+  area.style.display = area.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('admin-login').addEventListener('click', async ()=>{
+  const email = document.getElementById('a-email').value.trim();
+  const pw = document.getElementById('a-pw').value;
+  const errEl = document.getElementById('admin-error');
+  errEl.style.display = 'none';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if(error){ errEl.textContent = '로그인에 실패했습니다. 이메일/비밀번호를 확인해주세요.'; errEl.style.display = 'block'; return; }
+  document.getElementById('admin-login-box').style.display = 'none';
+  await loadAdminTable();
+});
+
+async function loadAdminTable(){
+  const tableWrap = document.getElementById('admin-table-wrap');
+  tableWrap.innerHTML = '<div class="loading">예약 현황을 불러오는 중...</div>';
+  const { data, error } = await sb.from('reservations').select('*').order('date').order('slot');
+  if(error){ tableWrap.innerHTML = '<div class="admin-empty">현황을 불러오지 못했습니다. (로그인 계정 권한을 확인해주세요)</div>'; return; }
+  if(!data || data.length === 0){ tableWrap.innerHTML = '<div class="admin-empty">아직 예약이 없습니다.</div>'; return; }
+  let html = `<table><tr><th>날짜</th><th>시간</th><th>좌석</th><th>장소</th><th>이름</th><th>연락처</th><th>분야</th><th>상태</th></tr>`;
+  data.forEach(r=>{
+    html += `<tr><td>${r.date}</td><td>${r.slot}</td><td>${r.seat}</td><td>${r.location_name}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.topic}</td><td>${r.status==='canceled'?'취소됨':'확정'}</td></tr>`;
+  });
+  html += `</table><p class="hint">총 ${data.length}건 (확정 ${data.filter(r=>r.status==='confirmed').length}건)</p>
+           <button class="link-btn" id="admin-logout">로그아웃</button>`;
+  tableWrap.innerHTML = html;
+  document.getElementById('admin-logout').addEventListener('click', async ()=>{
+    await sb.auth.signOut();
+    document.getElementById('admin-login-box').style.display = 'block';
+    tableWrap.innerHTML = '';
+  });
+}
+</script>
+</body>
+</html>
