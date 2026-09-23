@@ -70,6 +70,11 @@
   .confirm-sub{font-size:14px;color:var(--muted);margin-top:6px;}
   .capture-note{background:#FBF6E9;border:1px solid #E9DDB6;border-radius:6px;padding:12px 14px;font-size:13.5px;color:#6B5A20;margin-top:14px;}
   .emphasis-note{background:#FDF1E7;border:2px solid var(--gold);border-radius:8px;padding:16px;font-size:14.5px;font-weight:700;color:#7A4A12;text-align:center;line-height:1.6;margin-top:18px;}
+  .capture-box{border:3px dashed var(--navy);border-radius:10px;padding:4px;margin-top:18px;background:#FBFAF6;}
+  .capture-box-label{text-align:center;font-size:13px;font-weight:700;color:var(--navy);padding:10px 6px 2px;}
+  .capture-box .summary-card{margin:10px;border:1px solid var(--line);}
+  .manage-hint-note{background:#EEF1F6;border:1px solid #C9D2E0;border-radius:6px;padding:12px 14px;font-size:13px;color:var(--navy-light);margin-bottom:16px;font-weight:600;}
+  .my-res-name{font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:2px;}
   .my-res-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:10px;}
   .my-res-card.canceled{opacity:0.55;}
   .my-res-top{display:flex;justify-content:space-between;align-items:center;}
@@ -163,11 +168,14 @@
         <div class="confirm-box">
           <div class="confirm-mark">✓</div>
           <div class="confirm-title">예약이 완료되었습니다</div>
-          <div class="confirm-sub">아래 내용을 확인해주세요.</div>
+          <div class="confirm-sub">아래 박스를 캡처해서 보관해주세요.</div>
+        </div>
+        <div class="capture-box">
+          <div class="capture-box-label">📸 이 박스를 캡처해서 보관해주세요</div>
+          <div class="summary-card" id="summary-done"></div>
         </div>
         <div class="emphasis-note">⚠️ 예약확정 문자가 별도로 발송되지 않으니 꼭 화면을 캡처해주시고 일정에 등록해두세요. 감사합니다.</div>
-        <div class="summary-card" id="summary-done"></div>
-        <div class="capture-note">📱 이 화면을 캡처해서 보관해주세요. 예약 확인 및 취소·변경 시 필요합니다.</div>
+        <div class="capture-note">📱 예약 변경 및 취소 시 예약하신 전화번호로 확인하실 수 있습니다.</div>
         <button class="btn-secondary" id="restart">새로 예약하기</button>
       </section>
     </main>
@@ -177,6 +185,7 @@
   <div id="manage-flow" style="display:none;">
     <main>
       <section class="panel active" id="manage-lookup">
+        <div class="manage-hint-note">📞 예약 변경 및 취소는 예약하신 전화번호로 확인하세요.</div>
         <label for="m-phone">예약할 때 입력한 연락처</label>
         <input type="tel" id="m-phone" placeholder="010-0000-0000">
         <button class="btn-primary" id="m-search">예약 조회하기</button>
@@ -248,12 +257,12 @@ const CAPACITY_OVERRIDES = {
   jobcenter: {
     '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:2,PM:2}, '2026-10-15':{AM:3,PM:2}, '2026-10-16':{AM:3,PM:0},
     '2026-10-19':{AM:2,PM:2}, '2026-10-20':{AM:2,PM:2}, '2026-10-21':{AM:2,PM:2}, '2026-10-22':{AM:3,PM:2}, '2026-10-23':{AM:2,PM:0},
-    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:0,PM:0}, '2026-10-28':{AM:2,PM:0}, '2026-10-29':{AM:2,PM:2}, '2026-10-30':{AM:2,PM:0}
+    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:2,PM:2}, '2026-10-28':{AM:0,PM:0}, '2026-10-29':{AM:2,PM:2}, '2026-10-30':{AM:2,PM:0}
   },
   library: {
     '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:2,PM:0}, '2026-10-15':{AM:2,PM:0}, '2026-10-16':{AM:3,PM:2},
     '2026-10-19':{AM:2,PM:2}, '2026-10-20':{AM:3,PM:2}, '2026-10-21':{AM:2,PM:2}, '2026-10-22':{AM:2,PM:2}, '2026-10-23':{AM:2,PM:2},
-    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:2,PM:2}, '2026-10-28':{AM:2,PM:0}, '2026-10-29':{AM:2,PM:2}, '2026-10-30':{AM:0,PM:2}
+    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:2,PM:3}, '2026-10-28':{AM:2,PM:0}, '2026-10-29':{AM:0,PM:2}, '2026-10-30':{AM:2,PM:2}
   },
   youth: {
     '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:0,PM:0}, '2026-10-15':{AM:2,PM:2}, '2026-10-16':{AM:3,PM:2},
@@ -550,6 +559,7 @@ function renderMyReservations(list){
     const card = document.createElement('div');
     card.className = 'my-res-card' + (r.status==='canceled' ? ' canceled' : '');
     card.innerHTML = `
+      <div class="my-res-name">${r.name || ''}</div>
       <div class="my-res-top">
         <strong>${r.location_name} (${r.place})</strong>
         <span class="badge ${r.status==='canceled'?'canceled':'confirmed'}">${r.status==='canceled'?'취소됨':'확정'}</span>
