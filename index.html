@@ -50,6 +50,7 @@
   .seat-btn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;min-width:52px;}
   .seat-btn.selected{background:var(--navy);border-color:var(--navy);color:#fff;}
   .seat-btn.taken{background:#EDEAE1;color:var(--muted);text-decoration:line-through;cursor:not-allowed;}
+  .no-counselor{color:#B23B3B;font-weight:700;font-size:13.5px;padding:10px 0;}
   .summary-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin:18px 0;}
   .summary-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;}
   .summary-row .k{color:var(--muted);}
@@ -217,7 +218,7 @@
 </div>
 
 <script>
-// ⚠️ Supabase 프로젝트 생성 후, 아래 두 값을 대표님의 실제 값으로 바꿔주세요.
+// ⚠️ Supabase 프로젝트 값 (이미 채워져 있습니다)
 const SUPABASE_URL = 'https://daimsmnipwzsuwrwsfpn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9xRybmH_l_AL9xfI-NwxNg_o8F3cx9L';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -230,6 +231,44 @@ const LOCATIONS = [
   {id:'youth', name:'오산청년일자리지원센터 이루잡', place:'3층 상담실 (운천로 62)<br><span style="color:#B23B3B;font-weight:700;">※ 만 19세에서 39세까지 신청 가능</span>', capacity:2},
 ];
 const SLOTS = ['09:00-10:00','10:00-11:00','11:00-12:00','13:00-14:00','14:00-15:00','15:00-16:00'];
+
+// ⚠️ 상담사 배정표(수강생이 만든 스케줄 앱)에서 가져온 오전/오후별 실제 배정 인원.
+//    상담사 배정이 바뀌면 이 표의 숫자만 고치면 됩니다. (장소id -> 날짜 -> {AM, PM})
+const CAPACITY_OVERRIDES = {
+  lifelong: {
+    '2026-10-12':{AM:4,PM:2}, '2026-10-13':{AM:2,PM:3}, '2026-10-14':{AM:4,PM:3}, '2026-10-15':{AM:3,PM:3}, '2026-10-16':{AM:4,PM:2},
+    '2026-10-19':{AM:3,PM:0}, '2026-10-20':{AM:4,PM:2}, '2026-10-21':{AM:3,PM:0}, '2026-10-22':{AM:3,PM:2}, '2026-10-23':{AM:4,PM:4},
+    '2026-10-26':{AM:3,PM:0}, '2026-10-27':{AM:3,PM:0}, '2026-10-28':{AM:3,PM:2}, '2026-10-29':{AM:2,PM:3}, '2026-10-30':{AM:2,PM:2}
+  },
+  cityhall: {
+    '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:2,PM:2}, '2026-10-15':{AM:2,PM:0}, '2026-10-16':{AM:3,PM:2},
+    '2026-10-19':{AM:2,PM:2}, '2026-10-20':{AM:2,PM:2}, '2026-10-21':{AM:2,PM:2}, '2026-10-22':{AM:2,PM:2}, '2026-10-23':{AM:2,PM:2},
+    '2026-10-26':{AM:2,PM:0}, '2026-10-27':{AM:2,PM:0}, '2026-10-28':{AM:2,PM:0}, '2026-10-29':{AM:2,PM:0}, '2026-10-30':{AM:2,PM:2}
+  },
+  jobcenter: {
+    '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:2,PM:2}, '2026-10-15':{AM:3,PM:2}, '2026-10-16':{AM:3,PM:0},
+    '2026-10-19':{AM:2,PM:2}, '2026-10-20':{AM:2,PM:2}, '2026-10-21':{AM:2,PM:2}, '2026-10-22':{AM:3,PM:2}, '2026-10-23':{AM:2,PM:0},
+    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:0,PM:0}, '2026-10-28':{AM:2,PM:0}, '2026-10-29':{AM:2,PM:2}, '2026-10-30':{AM:2,PM:0}
+  },
+  library: {
+    '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:2,PM:0}, '2026-10-15':{AM:2,PM:0}, '2026-10-16':{AM:3,PM:2},
+    '2026-10-19':{AM:2,PM:2}, '2026-10-20':{AM:3,PM:2}, '2026-10-21':{AM:2,PM:2}, '2026-10-22':{AM:2,PM:2}, '2026-10-23':{AM:2,PM:2},
+    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:2,PM:2}, '2026-10-28':{AM:2,PM:0}, '2026-10-29':{AM:2,PM:2}, '2026-10-30':{AM:0,PM:2}
+  },
+  youth: {
+    '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:2,PM:2}, '2026-10-14':{AM:0,PM:0}, '2026-10-15':{AM:2,PM:2}, '2026-10-16':{AM:3,PM:2},
+    '2026-10-19':{AM:2,PM:2}, '2026-10-20':{AM:2,PM:2}, '2026-10-21':{AM:2,PM:2}, '2026-10-22':{AM:2,PM:2}, '2026-10-23':{AM:2,PM:0},
+    '2026-10-26':{AM:2,PM:2}, '2026-10-27':{AM:2,PM:2}, '2026-10-28':{AM:0,PM:2}, '2026-10-29':{AM:2,PM:0}, '2026-10-30':{AM:0,PM:2}
+  }
+};
+
+function getSessionCapacity(locationId, dateStr, session){
+  const forLoc = CAPACITY_OVERRIDES[locationId];
+  const forDate = forLoc && forLoc[dateStr];
+  if(forDate && typeof forDate[session] === 'number') return forDate[session];
+  const loc = LOCATIONS.find(l=>l.id===locationId);
+  return loc ? loc.capacity : 0;
+}
 
 function buildDates(){
   const start = new Date(2026,9,12), end = new Date(2026,9,30);
@@ -343,46 +382,68 @@ async function renderSlots(){
   document.getElementById('slot-error').style.display = 'none';
   const dateStr = fmtDate(state.date);
   const taken = await fetchTakenSeats(state.location.id, dateStr);
-  buildSeatGrid(area, state.location.capacity, taken, (slot, seat)=>{
+  buildSeatGrid(area, state.location.id, dateStr, taken, (slot, seat)=>{
     state.slot = slot; state.seat = seat;
     document.getElementById('to-step3').disabled = false;
   });
 }
 
-function buildSeatGrid(area, capacity, taken, onPick){
+function buildSlotBlock(area, s, capacity, taken, onPick){
+  const block = document.createElement('div');
+  block.className = 'slot-time-block';
+  const label = document.createElement('div');
+  label.className = 'slot-time-label';
+  label.textContent = s;
+  block.appendChild(label);
+  const seatRow = document.createElement('div');
+  seatRow.className = 'seat-row';
+  for(let seat=1; seat<=capacity; seat++){
+    const btn = document.createElement('button');
+    btn.className = 'seat-btn';
+    btn.textContent = capacity===1 ? '예약' : ('예약'+seat);
+    const key = s+'|'+seat;
+    if(taken.has(key)){
+      btn.classList.add('taken'); btn.disabled = true;
+    } else {
+      btn.addEventListener('click', ()=>{
+        area.querySelectorAll('.seat-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        onPick(s, seat);
+      });
+    }
+    seatRow.appendChild(btn);
+  }
+  block.appendChild(seatRow);
+  return block;
+}
+
+function buildSeatGrid(area, locationId, dateStr, taken, onPick){
   area.innerHTML = '';
+  const capAM = getSessionCapacity(locationId, dateStr, 'AM');
+  const capPM = getSessionCapacity(locationId, dateStr, 'PM');
+
   const morning = document.createElement('div');
   morning.innerHTML = '<div class="slot-group-title">오전 (9시 ~ 12시)</div>';
+  if(capAM === 0){
+    const msg = document.createElement('div');
+    msg.className = 'no-counselor';
+    msg.textContent = '이 날 오전은 배정된 상담사가 없어 예약이 불가합니다.';
+    morning.appendChild(msg);
+  } else {
+    SLOTS.slice(0,3).forEach(s=> morning.appendChild(buildSlotBlock(area, s, capAM, taken, onPick)));
+  }
+
   const afternoon = document.createElement('div');
   afternoon.innerHTML = '<div class="slot-group-title">오후 (13시 ~ 16시)</div>';
-  SLOTS.forEach((s, idx)=>{
-    const block = document.createElement('div');
-    block.className = 'slot-time-block';
-    const label = document.createElement('div');
-    label.className = 'slot-time-label';
-    label.textContent = s;
-    block.appendChild(label);
-    const seatRow = document.createElement('div');
-    seatRow.className = 'seat-row';
-    for(let seat=1; seat<=capacity; seat++){
-      const btn = document.createElement('button');
-      btn.className = 'seat-btn';
-      btn.textContent = capacity===1 ? '예약' : ('예약'+seat);
-      const key = s+'|'+seat;
-      if(taken.has(key)){
-        btn.classList.add('taken'); btn.disabled = true;
-      } else {
-        btn.addEventListener('click', ()=>{
-          area.querySelectorAll('.seat-btn').forEach(b=>b.classList.remove('selected'));
-          btn.classList.add('selected');
-          onPick(s, seat);
-        });
-      }
-      seatRow.appendChild(btn);
-    }
-    block.appendChild(seatRow);
-    (idx < 3 ? morning : afternoon).appendChild(block);
-  });
+  if(capPM === 0){
+    const msg = document.createElement('div');
+    msg.className = 'no-counselor';
+    msg.textContent = '이 날 오후는 배정된 상담사가 없어 예약이 불가합니다.';
+    afternoon.appendChild(msg);
+  } else {
+    SLOTS.slice(3,6).forEach(s=> afternoon.appendChild(buildSlotBlock(area, s, capPM, taken, onPick)));
+  }
+
   area.appendChild(morning); area.appendChild(afternoon);
 }
 
@@ -546,8 +607,9 @@ function startReschedule(r){
     document.getElementById('r-confirm').disabled = true;
     const area = document.getElementById('r-slot-area');
     area.innerHTML = '<div class="loading">예약 가능 시간을 확인하는 중...</div>';
-    const taken = await fetchTakenSeats(loc.id, fmtDate(d));
-    buildSeatGrid(area, loc.capacity, taken, (slot, seat)=>{
+    const dateStr = fmtDate(d);
+    const taken = await fetchTakenSeats(loc.id, dateStr);
+    buildSeatGrid(area, loc.id, dateStr, taken, (slot, seat)=>{
       rescheduleTarget._newSlot = slot;
       rescheduleTarget._newSeat = seat;
       document.getElementById('r-confirm').disabled = false;
