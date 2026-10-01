@@ -83,10 +83,24 @@
   .badge.canceled{background:#F0EDE6;color:var(--muted);}
   .res-actions{display:flex;gap:8px;margin-top:10px;}
   .res-actions button{flex:1;font-size:13px;padding:9px;}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:14px;}
-  th,td{border:1px solid var(--line);padding:6px 5px;text-align:left;}
-  th{background:var(--card);color:var(--muted);font-weight:700;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:0;}
+  th,td{border:1px solid var(--line);padding:6px 5px;text-align:left;white-space:nowrap;}
+  th{background:var(--card);color:var(--muted);font-weight:700;position:sticky;top:0;}
   .admin-empty{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
+  .admin-stats{display:flex;gap:8px;margin-bottom:14px;}
+  .stat-box{flex:1;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 6px;text-align:center;}
+  .stat-box .num{font-size:20px;font-weight:800;color:var(--navy);}
+  .stat-box.canceled .num{color:var(--muted);}
+  .stat-box .label{font-size:11px;color:var(--muted);margin-top:2px;}
+  .admin-filters{display:flex;gap:6px;margin-bottom:10px;}
+  .filter-btn{flex:1;padding:8px 4px;border:1px solid var(--line);background:var(--card);border-radius:6px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;}
+  .filter-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .admin-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;max-height:420px;}
+  tr.row-canceled{background:#F7F5F0;color:var(--muted);}
+  .status-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
+  .status-pill.confirmed{background:#E7EFEA;color:var(--sage);}
+  .status-pill.canceled{background:#F0EDE6;color:var(--muted);}
+  .btn-del-small{background:#fff;color:#B23B3B;border:1px solid #B23B3B;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
   .loading{text-align:center;color:var(--muted);font-size:14px;padding:30px 0;}
   footer{margin-top:auto;padding:16px 20px 28px;text-align:center;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);}
   .admin-section{margin-top:20px;}
@@ -668,19 +682,83 @@ document.getElementById('admin-login').addEventListener('click', async ()=>{
   await loadAdminTable();
 });
 
+let adminAllData = [];
+let adminFilter = 'confirmed'; // 기본값: 확정된 예약만 먼저 보여줌 (취소건에 가려 확인 어려운 문제 해결)
+
 async function loadAdminTable(){
   const tableWrap = document.getElementById('admin-table-wrap');
   tableWrap.innerHTML = '<div class="loading">예약 현황을 불러오는 중...</div>';
-  const { data, error } = await sb.from('reservations').select('*').order('date').order('slot');
+  const { data, error } = await sb.from('reservations').select('*').order('date').order('slot').order('seat');
   if(error){ tableWrap.innerHTML = '<div class="admin-empty">현황을 불러오지 못했습니다. (로그인 계정 권한을 확인해주세요)</div>'; return; }
+  adminAllData = data || [];
+  renderAdminTable();
+}
+
+function renderAdminTable(){
+  const tableWrap = document.getElementById('admin-table-wrap');
+  const data = adminAllData;
   if(!data || data.length === 0){ tableWrap.innerHTML = '<div class="admin-empty">아직 예약이 없습니다.</div>'; return; }
-  let html = `<table><tr><th>날짜</th><th>시간</th><th>좌석</th><th>장소</th><th>이름</th><th>연락처</th><th>분야</th><th>상태</th></tr>`;
-  data.forEach(r=>{
-    html += `<tr><td>${r.date}</td><td>${r.slot}</td><td>${r.seat}</td><td>${r.location_name}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.topic}</td><td>${r.status==='canceled'?'취소됨':'확정'}</td></tr>`;
-  });
-  html += `</table><p class="hint">총 ${data.length}건 (확정 ${data.filter(r=>r.status==='confirmed').length}건)</p>
-           <button class="link-btn" id="admin-logout">로그아웃</button>`;
+
+  const confirmedCount = data.filter(r=>r.status==='confirmed').length;
+  const canceledCount = data.filter(r=>r.status==='canceled').length;
+
+  let filtered = data;
+  if(adminFilter === 'confirmed') filtered = data.filter(r=>r.status==='confirmed');
+  if(adminFilter === 'canceled') filtered = data.filter(r=>r.status==='canceled');
+
+  let html = `
+    <div class="admin-stats">
+      <div class="stat-box"><div class="num">${data.length}</div><div class="label">전체</div></div>
+      <div class="stat-box"><div class="num">${confirmedCount}</div><div class="label">확정</div></div>
+      <div class="stat-box canceled"><div class="num">${canceledCount}</div><div class="label">취소</div></div>
+    </div>
+    <div class="admin-filters">
+      <button class="filter-btn ${adminFilter==='confirmed'?'active':''}" data-filter="confirmed">확정만 (${confirmedCount})</button>
+      <button class="filter-btn ${adminFilter==='all'?'active':''}" data-filter="all">전체 (${data.length})</button>
+      <button class="filter-btn ${adminFilter==='canceled'?'active':''}" data-filter="canceled">취소만 (${canceledCount})</button>
+    </div>
+    <div class="admin-table-scroll">
+    <table><tr><th>날짜</th><th>시간</th><th>좌석</th><th>장소</th><th>이름</th><th>연락처</th><th>분야</th><th>상태</th><th></th></tr>`;
+
+  if(filtered.length === 0){
+    html += `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:16px 0;white-space:normal;">해당 항목이 없습니다.</td></tr>`;
+  } else {
+    filtered.forEach(r=>{
+      const isCanceled = r.status === 'canceled';
+      html += `<tr class="${isCanceled?'row-canceled':''}">
+        <td>${r.date}</td><td>${r.slot}</td><td>${r.seat}</td><td>${r.location_name}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.topic}</td>
+        <td><span class="status-pill ${isCanceled?'canceled':'confirmed'}">${isCanceled?'취소됨':'확정'}</span></td>
+        <td>${isCanceled ? `<button class="btn-del-small" data-del-id="${r.id}">삭제</button>` : ''}</td>
+      </tr>`;
+    });
+  }
+
+  html += `</table></div>
+    <p class="hint" style="margin-top:10px;">총 ${data.length}건 · 확정 ${confirmedCount}건 · 취소 ${canceledCount}건</p>
+    <button class="link-btn" id="admin-logout">로그아웃</button>`;
+
   tableWrap.innerHTML = html;
+
+  tableWrap.querySelectorAll('.filter-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      adminFilter = btn.dataset.filter;
+      renderAdminTable();
+    });
+  });
+
+  tableWrap.querySelectorAll('[data-del-id]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.delId;
+      const row = adminAllData.find(r=>r.id===id);
+      if(!row) return;
+      if(!confirm(`${row.location_name} / ${row.date} / ${row.slot} (취소된 예약)을 완전히 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+      const { error } = await sb.from('reservations').delete().eq('id', id);
+      if(error){ alert('삭제 중 오류가 발생했습니다. (관리자 삭제 권한 설정을 확인해주세요)'); console.error(error); return; }
+      adminAllData = adminAllData.filter(r=>r.id!==id);
+      renderAdminTable();
+    });
+  });
+
   document.getElementById('admin-logout').addEventListener('click', async ()=>{
     await sb.auth.signOut();
     document.getElementById('admin-login-box').style.display = 'block';
