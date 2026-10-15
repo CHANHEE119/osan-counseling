@@ -285,6 +285,20 @@ const CAPACITY_OVERRIDES = {
   }
 };
 
+// ⚠️ 특정 장소·날짜의 "특정 시간"만 예약 불가로 막고 싶을 때 여기에 한 줄 추가하세요.
+//    형식:  장소id: { '날짜': ['시간', '시간'] },
+//    장소id: lifelong(평생학습관) / cityhall(오산시청) / jobcenter(고용복지+센터) / library(중앙도서관) / youth(이루잡)
+//    시간: '09:00-10:00' '10:00-11:00' '11:00-12:00' '13:00-14:00' '14:00-15:00' '15:00-16:00'
+const BLOCKED_SLOTS = {
+  cityhall: {
+    '2026-10-16': ['14:00-15:00', '15:00-16:00']
+  }
+};
+function isSlotBlocked(locationId, dateStr, slot){
+  const list = BLOCKED_SLOTS[locationId] && BLOCKED_SLOTS[locationId][dateStr];
+  return !!(list && list.includes(slot));
+}
+
 function getSessionCapacity(locationId, dateStr, session){
   const forLoc = CAPACITY_OVERRIDES[locationId];
   const forDate = forLoc && forLoc[dateStr];
@@ -453,7 +467,14 @@ function buildSeatGrid(area, locationId, dateStr, taken, onPick){
     msg.textContent = '이 날 오전은 배정된 상담사가 없어 예약이 불가합니다.';
     morning.appendChild(msg);
   } else {
-    SLOTS.slice(0,3).forEach(s=> morning.appendChild(buildSlotBlock(area, s, capAM, taken, onPick)));
+    const amSlots = SLOTS.slice(0,3).filter(s=>!isSlotBlocked(locationId, dateStr, s));
+    if(amSlots.length === 0){
+      const msg = document.createElement('div');
+      msg.className = 'no-counselor';
+      msg.textContent = '이 날 오전은 예약이 불가합니다.';
+      morning.appendChild(msg);
+    }
+    amSlots.forEach(s=> morning.appendChild(buildSlotBlock(area, s, capAM, taken, onPick)));
   }
 
   const afternoon = document.createElement('div');
@@ -464,7 +485,14 @@ function buildSeatGrid(area, locationId, dateStr, taken, onPick){
     msg.textContent = '이 날 오후는 배정된 상담사가 없어 예약이 불가합니다.';
     afternoon.appendChild(msg);
   } else {
-    SLOTS.slice(3,6).forEach(s=> afternoon.appendChild(buildSlotBlock(area, s, capPM, taken, onPick)));
+    const pmSlots = SLOTS.slice(3,6).filter(s=>!isSlotBlocked(locationId, dateStr, s));
+    if(pmSlots.length === 0){
+      const msg = document.createElement('div');
+      msg.className = 'no-counselor';
+      msg.textContent = '이 날 오후는 예약이 불가합니다.';
+      afternoon.appendChild(msg);
+    }
+    pmSlots.forEach(s=> afternoon.appendChild(buildSlotBlock(area, s, capPM, taken, onPick)));
   }
 
   area.appendChild(morning); area.appendChild(afternoon);
