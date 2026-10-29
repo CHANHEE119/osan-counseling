@@ -116,7 +116,7 @@
   <header>
     <p class="eyebrow">오산시 성인 진로개발 사회공헌 상담서비스</p>
     <h1>1:1 상담 예약</h1>
-    <p class="sub">상담 가능 일정 : 10월 12일(월) ~ 10월 30일(금), 공휴일 제외</p>
+    <p class="sub">상담 가능 일정 : 10월 12일(월) ~ 10월 30일(금), 공휴일 제외<br>(오산시 평생학습관은 11월 6일(금)까지 연장 운영)</p>
     <p class="sub" style="margin-top:4px;">* 본 상담은 약 40분 소요됩니다.</p>
     <p class="sub" style="margin-top:4px;color:#B23B3B;font-weight:700;">※ 오산청년일자리지원센터 이루잡은 만 19세에서 39세까지 신청 가능합니다.</p>
   </header>
@@ -261,7 +261,8 @@ const CAPACITY_OVERRIDES = {
   lifelong: {
     '2026-10-12':{AM:2,PM:2}, '2026-10-13':{AM:3,PM:3}, '2026-10-14':{AM:2,PM:2}, '2026-10-15':{AM:2,PM:0}, '2026-10-16':{AM:2,PM:2},
     '2026-10-19':{AM:3,PM:0}, '2026-10-20':{AM:4,PM:3}, '2026-10-21':{AM:4,PM:2}, '2026-10-22':{AM:4,PM:2}, '2026-10-23':{AM:2,PM:3},
-    '2026-10-26':{AM:2,PM:0}, '2026-10-27':{AM:4,PM:4}, '2026-10-28':{AM:3,PM:3}, '2026-10-29':{AM:3,PM:3}, '2026-10-30':{AM:3,PM:2}
+    '2026-10-26':{AM:2,PM:0}, '2026-10-27':{AM:4,PM:4}, '2026-10-28':{AM:3,PM:3}, '2026-10-29':{AM:3,PM:3}, '2026-10-30':{AM:3,PM:2},
+    '2026-11-02':{AM:4,PM:4}, '2026-11-03':{AM:4,PM:4}, '2026-11-04':{AM:4,PM:4}, '2026-11-05':{AM:4,PM:4}, '2026-11-06':{AM:4,PM:4}
   },
   cityhall: {
     '2026-10-12':{AM:1,PM:0}, '2026-10-13':{AM:0,PM:0}, '2026-10-14':{AM:1,PM:1}, '2026-10-15':{AM:1,PM:0}, '2026-10-16':{AM:1,PM:1},
@@ -311,7 +312,7 @@ function getSessionCapacity(locationId, dateStr, session){
 }
 
 function buildDates(){
-  const start = new Date(2026,9,12), end = new Date(2026,9,30);
+  const start = new Date(2026,9,12), end = new Date(2026,10,6);
   const dates = []; let cur = new Date(start);
   while(cur <= end){
     const dow = cur.getDay();
@@ -321,6 +322,9 @@ function buildDates(){
   return dates;
 }
 const ALL_DATES = buildDates();
+// 장소별 마지막 예약 가능 날짜 (여기에 없는 장소는 기본값 2026-10-30)
+const LAST_DATE_BY_LOCATION = { lifelong: '2026-11-06' };
+const DEFAULT_LAST_DATE = '2026-10-30';
 const DOW_KR = ['일','월','화','수','목','금','토'];
 function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmtDateKR(d){ return `${d.getMonth()+1}월 ${d.getDate()}일(${DOW_KR[d.getDay()]})`; }
@@ -373,10 +377,12 @@ function goStep(n){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-function renderDateChips(container, onPick){
+function renderDateChips(container, onPick, locationId){
   container.innerHTML = '';
+  const lastDate = LAST_DATE_BY_LOCATION[locationId] || DEFAULT_LAST_DATE;
+  const dates = ALL_DATES.filter(d=> fmtDate(d) <= lastDate);
   const weeks = [];
-  for(let i=0;i<ALL_DATES.length;i+=5) weeks.push(ALL_DATES.slice(i,i+5));
+  for(let i=0;i<dates.length;i+=5) weeks.push(dates.slice(i,i+5));
   weeks.forEach((week,wi)=>{
     const block = document.createElement('div');
     block.className = 'week-block';
@@ -407,7 +413,7 @@ function renderDatePicker(){
     state.date = d; state.slot = null; state.seat = null;
     document.getElementById('to-step3').disabled = true;
     renderSlots();
-  });
+  }, state.location.id);
 }
 
 async function fetchTakenSeats(locationId, dateStr){
@@ -669,7 +675,7 @@ function startReschedule(r){
       rescheduleTarget._newSeat = seat;
       document.getElementById('r-confirm').disabled = false;
     });
-  });
+  }, loc.id);
   document.getElementById('r-slot-area').innerHTML = '';
 }
 
